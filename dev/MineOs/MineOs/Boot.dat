@@ -1,0 +1,20 @@
+{
+  Boot = "",
+  CustomOs = true,
+  Data = {
+    {
+      State = false,
+      name = "CustomOs",
+      func = "CustomOs",
+    },
+    {
+      State = false,
+      name = "Motd Enable",
+      func = "",
+    },
+    {
+      func = "return",
+      name = "Exit",
+    },
+  },
+}
