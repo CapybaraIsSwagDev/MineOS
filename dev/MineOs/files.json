@@ -1,0 +1,14 @@
+[
+  {
+    "path": "file1.txt",
+    "name": "file1.txt"
+  },
+  {
+    "path": "folder/file2.txt",
+    "name": "file2.txt"
+  },
+  {
+    "path": "images/image1.png",
+    "name": "image1.png"
+  }
+]
