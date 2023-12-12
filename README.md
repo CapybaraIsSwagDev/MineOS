@@ -1,2 +1,3 @@
 # MineOS
-MineOs is Upgraded CraftOs with some custom vommands
+MineOs is Upgraded CraftOs with some custom commands
+https://juraj863.github.io/MineOS/
