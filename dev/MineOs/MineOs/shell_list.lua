@@ -25,7 +25,7 @@ end
 shell.setPath(sPath)
 help.setPath("/rom/help")
 local OsDir = "MineOs"
-os.loadAPI(OsDir.."/lib.lua")
+os.loadAPI("MineOs/lib.lua")
 --FIX
 shell.setAlias("ls","list")
 shell.setAlias("dir","list")
@@ -146,6 +146,12 @@ if turtle then
         { completion.choice, { "left", "right" } }
     ))
 end
+
+
+
+
+
+
 -- Show MOTD
 settings.clear()
 settings.load("/MineOs/Boot.dat")
@@ -185,6 +191,40 @@ else
             else
                 shell.run("bios")
             end
+        end
+    end
+end
+local nativeReadOnly = fs.isReadOnly
+fs.isReadOnly = function (path)
+    if not shell.isPathBlocked(path) then
+        --return error("Sorry",0)
+        return nativeReadOnly(path)
+    else
+        return nativeReadOnly(path)
+    end
+end
+local nativeOpen = fs.open
+fs.open = function (path,mode,code)
+    --("MineOs/programs/shell.lua","r")
+    if code then
+        if code == "Update" then
+            return nativeOpen(path,mode)
+        end
+    else
+        if mode == "r" then
+            if shell.isReadeble(path) then
+                return nativeOpen(path,mode)
+            else
+                error("This File cannot be read :"..path,0)
+            end
+        elseif mode == "w" then
+            if shell.isPathBlocked(path) then
+                return nativeOpen(path,mode)
+            else
+                error("This File cannot be write :"..path,0)
+            end
+        else
+            error("Error unknown mode",0)
         end
     end
 end

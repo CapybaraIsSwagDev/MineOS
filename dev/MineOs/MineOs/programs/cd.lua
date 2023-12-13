@@ -10,10 +10,8 @@ end
 
 local sNewDir = shell.resolve(tArgs[1])
 if fs.isDir(sNewDir) then
-    if shell.isBlocked(sNewDir) then 
-        shell.setDir(sNewDir)
-    end
+    shell.setDir(sNewDir)
 else
-    print("Not a directory")
+    printError("Not a directory")
     return
 end

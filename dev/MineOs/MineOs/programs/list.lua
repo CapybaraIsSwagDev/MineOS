@@ -23,13 +23,11 @@ local bShowHidden = settings.get("list.show_hidden")
 for _, sItem in pairs(tAll) do
     if bShowHidden or string.sub(sItem, 1, 1) ~= "." then
         local sPath = fs.combine(sDir, sItem)
-        if shell.isBlocked(sDir..sPath) then
-            if fs.isDir(sPath) then
-                table.insert(tDirs, sItem)
-            else
-                table.insert(tFiles, sItem)
-            end          
-        end
+        if fs.isDir(sPath) then
+            table.insert(tDirs, sItem)
+        else
+            table.insert(tFiles, sItem)
+        end          
     end
 end
 table.sort(tDirs)

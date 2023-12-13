@@ -57,7 +57,6 @@ local parentShell = nil
 local parentTerm = term.current()
 local Blocked = {
     ["MineOs"]  = true,
-    ["MineOs.lua"] = true,
     ["startup.lua"] = true,
 }
 
@@ -316,10 +315,6 @@ end
 function shell.path()
     return sPath
 end
-function shell.isBlocked(path)
-    path = shell.resolve(path)
-    return Blocked[path] == nil
-end
 local function split (inputstr, sep)
     if sep == nil then
             sep = "%s"
@@ -330,11 +325,92 @@ local function split (inputstr, sep)
     end
     return t
 end
+function shell.Update()
+    -- Base URL for GitHub Pages
+    local baseUrl = "https://juraj863.github.io/MineOS/dev/MineOs/"
+
+    -- Function to download a file from the specified URL
+    local function downloadFile(oFile, destination)
+        local response = http.get(baseUrl .. oFile.path)
+        
+        if response then
+            local file = fs.open(oFile.path, "w","Update")
+            file.write(response.readAll())
+            file.close()
+            response.close()
+            term.setTextColor(colors.lime)
+            print("Downloaded: "..oFile.name)
+        else
+            term.setTextColor(colors.red)
+            print("Failed to download: " .. baseUrl .. oFile.path)
+        end
+    end
+
+    -- Function to download all files from the specified folder using files.json
+    local function downloadFolderWithJson()
+        local apiUrl = baseUrl .. "files.json"
+        local response = http.get(apiUrl)
+
+        if response then
+            local files = textutils.unserializeJSON(response.readAll())
+            response.close()
+
+            for _, file in ipairs(files) do
+                local url = baseUrl .. file.path
+
+                downloadFile(file)
+            end
+        else
+            term.setTextColor(colors.red)
+            print("Failed to access files.json: " .. apiUrl)
+        end
+    end
+    -- Main program
+    print("Downloading files ...")
+    downloadFolderWithJson()
+    term.setTextColor(colors.lime)
+    print("Download complete.")
+    print("Rebooting...")
+    sleep(1)
+    os.reboot()
+end
+local Blocked = {
+    ["shell_list.lua"] = {R=true,W=false},
+    ["lib.lua"] = {R=true,W=true},
+    ["Boot.dat"] = {R=true,W=true},
+}
+local bannedPrograms = {
+    ["shell.lua"] = true,
+    ["dev.lua"] = true,
+}
+function shell.isReadeble(path)
+    path = shell.resolve(path)
+    local Pdir = split(path,"/")
+    if Pdir[1] == "startup.lua" then return false  
+    elseif Pdir[1] == "MineOs" and Pdir[2] == "programs" then
+        if bannedPrograms[Pdir[3]] == nil then return true
+        else return false
+        end
+    elseif Pdir[1] == "MineOs" then
+        if Blocked[Pdir[2]] ~= nil then return Blocked[Pdir[2]].R
+        else return false
+        end
+    else return true
+    end
+end
 function shell.isPathBlocked(path)
     path = shell.resolve(path)
     local Pdir = split(path,"/")
-    local dir = Pdir[1]
-    return Blocked[dir] == nil
+    if Pdir[1] == "MineOs" and Pdir[2] == "programs" then
+        if bannedPrograms[Pdir[3]] ~= nil then return Blocked[Pdir[3]]
+        else return false
+        end
+    elseif Pdir[1] == "MineOs" then
+        if Blocked[Pdir[2]] ~= nil then return Blocked[Pdir[2]].W
+        else return false
+        end
+    else return true
+    end
 end
 --- Set the [current program path][`path`].
 --
@@ -449,7 +525,7 @@ function shell.programs(include_hidden)
             for n = 1, #tList do
                 local sFile = tList[n]
                 if not fs.isDir(fs.combine(sPath, sFile)) and
-                   (include_hidden or string.sub(sFile, 1, 1) ~= ".") and shell.isBlocked(sPath) then
+                   (include_hidden or string.sub(sFile, 1, 1) ~= ".") then
                     if #sFile > 4 and sFile:sub(-4) == ".lua" then
                         sFile = sFile:sub(1, -5)
                     end
@@ -785,10 +861,7 @@ else
             shell.run("/MineOs/programs/"..spli[1]..".lua".." "..A)
         else
             if debug then print(result) end
-            local A = split(result,"/")
-            local B = A[1]
-            local C = "/"..B
-            if shell.isBlocked(B) then 
+            if shell.isPathBlocked(result) then 
                 shell.run(result)
             else
                 printError("This Directory is disabled")
