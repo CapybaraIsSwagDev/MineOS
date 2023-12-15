@@ -170,6 +170,8 @@ fs.open = function (path, mode, code)
     if code then
         if code == "Update" then
             return nativeOpen(path, mode)
+        elseif code == "dev" then
+            return nativeOpen
         end
     else
         if mode == "r" then
@@ -180,7 +182,14 @@ fs.open = function (path, mode, code)
             end
         elseif mode == "w" then
             if shell.isPathBlocked(path) then
+                print("ok") sleep(1)
                 return nativeOpen(path, "w")
+            else
+                error("This File cannot be write :"..path,0)
+            end
+        elseif mode == "a" then
+            if shell.isPathBlocked(path) then
+                return nativeOpen(path, "a")
             else
                 error("This File cannot be write :"..path,0)
             end
@@ -204,33 +213,35 @@ fs.delete = function (path, code)
     end
 end
 local nativeCopy = fs.copy
-fs.copy = function (path, dest)
+fs.copy = function (path, dest, code)
     if code then
         if code == "Update" then
-            return nativeDelete(path)
+            return nativeCopy(path, dest)
         end
     else
         if shell.isReadeble(path) and shell.isPathBlocked(path) then
-            return nativeDelete(path)
+            return nativeCopy(path, dest)
         else
             error("This File cannot be copy :"..path,0)
         end
     end
 end
-local nativeCopy = fs.move
+local nativeMove = fs.move
 fs.move = function (path, dest)
     if code then
         if code == "Update" then
-            return nativeDelete(path)
+            return nativeMove(path)
         end
     else
         if shell.isReadeble(path) and shell.isPathBlocked(path) then
-            return nativeDelete(path)
+            return nativeMove(path)
         else
             error("This File cannot be moved :"..path,0)
         end
     end
 end
+settings.clear()
+settings.load("/MineOs/Boot.dat")
 if settings.get("Data")[1].State and settings.get("Boot") ~= "" then
     term.clear()
     term.setCursorPos(1,1)

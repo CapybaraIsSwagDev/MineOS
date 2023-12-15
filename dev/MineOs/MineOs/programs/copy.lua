@@ -24,7 +24,7 @@ if #tFiles > 0 then
             elseif fs.getFreeSpace(sDest) < fs.getSize(sFile) then
                 printError("Not enough space")
             else
-                 fs.copy(sFile, sDest)
+                fs.copy(sFile, sDest)
             end
         else
             printError("Cannot overwrite file multiple times")

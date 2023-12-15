@@ -21,16 +21,28 @@ if input == "dev123" then
                 else
                     term.setTextColor(colors.white)
                     term.write("Installing disk startup from cloud")
-                    shell.run("pastebin get Jv7sRxLW disk/startup.lua")
+                    shell.run("pastebin get Jv7sRxLW /disk/startup.lua")
                     term.setTextColor(colors.lime)
                     print(" Success")
                 end
-                term.setTextColor(colors.white)
-                term.write("Copying MineOs")
-                fs.copy("/MineOs","/disk/MineOs/MineOs","Update")
-                term.setTextColor(colors.lime)
-                print(" Success")
-                --
+                if fs.exists("/disk/MineOs/startup.lua") then
+                    printError("disk/MineOs/startup already exists")
+                else
+                    term.setTextColor(colors.white)
+                    term.write("Copying MineOs/startup")
+                    shell.run("copy","/startup.lua","/disk/MineOs/startup.lua")
+                    term.setTextColor(colors.lime)
+                    print(" Success")
+                end
+                if fs.exists("disk/MineOs/MineOs") then
+                    printError("/disk/MineOs/Bios already exists")
+                else
+                    term.setTextColor(colors.white)
+                    term.write("Copying MineOs")
+                    shell.run("copy","/MineOs","/disk/MineOs/MineOS")
+                    term.setTextColor(colors.lime)
+                    print(" Success")
+                end
                 sleep(3)
             end
         elseif command == "exit" then

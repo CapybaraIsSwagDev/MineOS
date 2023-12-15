@@ -387,7 +387,7 @@ local Blocked = {
     ["lib.lua"] = {R=true,W=true},
     ["Boot.dat"] = {R=true,W=true},
     ["programs/shell.lua"] = {R=false,W=false},
-    ["programs/dev.lua"] = {R=false,W=false},
+    ["programs/dev.lua"] = {R=true,W=false},
 }
 function shell.isReadeble(opath)
     orgdir = shell.dir()
