@@ -1,6 +1,5 @@
 {
-  Boot = "",
-  CustomOs = true,
+  Boot = "/GoldOs/main.lua",
   Data = {
     {
       State = false,
@@ -17,4 +16,5 @@
       name = "Exit",
     },
   },
+  CustomOs = true,
 }

@@ -36,6 +36,7 @@ shell.setCompletionFunction("MineOs/programs/shell.lua", completion.build({ comp
 shell.setCompletionFunction("MineOs/programs/delete.lua", completion.build({ completion.dirOrFile, many = true }))
 shell.setCompletionFunction("MineOs/programs/cd.lua", completion.build(completion.dir))
 shell.setCompletionFunction("MineOs/programs/list.lua", completion.build(completion.dir))
+shell.setCompletionFunction("MineOs/programs/lib.lua", completion.build({ completion.choice, { "install ", "compile ", "url "} }))
 shell.setCompletionFunction("printer.lua", completion.build({ completion.choice, { "print", "pastebin" } }))
 -- Setup aliases
 shell.setAlias("cp", "copy")
@@ -149,77 +150,37 @@ end
 
 
 
-
-
-
 -- Show MOTD
 settings.clear()
 settings.load("/MineOs/Boot.dat")
-if settings.get("Data")[1].State then
-    term.clear()
-    term.setCursorPos(1,1)
-    print("Do you wanna allow third-party software?\nY/N")
-    local input = read()
-    input = string.lower(input)
-    if input == "n" then settings.clear()settings.load("/MineOs/Boot.dat")local a=settings.get("Data")a[1].State=false;settings.set("Data",a)settings.save("/MineOs/Boot.dat")end
-    if input == "y" then
-        local function a(b,c)for d,e in ipairs(b)do if e==c then return true end end;return false end
-        local files = fs.list("/MineOs/programs/")
-        print("First Phase")
-        for i = 1, #files do
-            local b=files[i]term.setTextColor(colors.white)term.write("Deleting ..."..b)local c={"shell.lua","bios.lua","dev.lua","package.lua","cd.lua","list.lua","delete.lua","move.lua"}if a(c,b)then
-                --delete
-                sleep(0.05)term.setTextColor(colors.red)print("Cannot Delete")
-            else
-                --delete
-                sleep(0.05)term.setTextColor(colors.lime)print("Success")
-            end 
-        end
-        term.setTextColor(colors.white)
-        settings.set("CustomOs",true)
-        setting.save("/MineOs/Boot.dat")
-    end
-else
-    if settings.get("Data")[2].State then
-        shell.run("motd")
-    end
-    if not settings.get("YEABITCHIAMBOOTSHELL") then
-        local data = settings.get("Data")
-        if data[1].State then
-            if not settings.get("Boot") == "" then
-                shell.run(settings.get("Boot"))
-            else
-                shell.run("bios")
-            end
-        end
-    end
+if settings.get("Data")[2].State then
+    shell.run("motd")
 end
+settings.clear()
 local nativeReadOnly = fs.isReadOnly
 fs.isReadOnly = function (path)
     if not shell.isPathBlocked(path) then
-        --return error("Sorry",0)
         return nativeReadOnly(path)
     else
         return nativeReadOnly(path)
     end
 end
 local nativeOpen = fs.open
-fs.open = function (path,mode,code)
-    --("MineOs/programs/shell.lua","r")
+fs.open = function (path, mode, code)
     if code then
         if code == "Update" then
-            return nativeOpen(path,mode)
+            return nativeOpen(path, mode)
         end
     else
         if mode == "r" then
             if shell.isReadeble(path) then
-                return nativeOpen(path,mode)
+                return nativeOpen(path, "r")
             else
                 error("This File cannot be read :"..path,0)
             end
         elseif mode == "w" then
             if shell.isPathBlocked(path) then
-                return nativeOpen(path,mode)
+                return nativeOpen(path, "w")
             else
                 error("This File cannot be write :"..path,0)
             end
@@ -227,4 +188,51 @@ fs.open = function (path,mode,code)
             error("Error unknown mode",0)
         end
     end
+end
+local nativeDelete = fs.delete
+fs.delete = function (path, code)
+    if code then
+        if code == "Update" then
+            return nativeDelete(path)
+        end
+    else
+        if shell.isReadeble(path) and shell.isPathBlocked(path) then
+            return nativeDelete(path)
+        else
+            error("This File cannot be deleted :"..path,0)
+        end
+    end
+end
+local nativeCopy = fs.copy
+fs.copy = function (path, dest)
+    if code then
+        if code == "Update" then
+            return nativeDelete(path)
+        end
+    else
+        if shell.isReadeble(path) and shell.isPathBlocked(path) then
+            return nativeDelete(path)
+        else
+            error("This File cannot be copy :"..path,0)
+        end
+    end
+end
+local nativeCopy = fs.move
+fs.move = function (path, dest)
+    if code then
+        if code == "Update" then
+            return nativeDelete(path)
+        end
+    else
+        if shell.isReadeble(path) and shell.isPathBlocked(path) then
+            return nativeDelete(path)
+        else
+            error("This File cannot be moved :"..path,0)
+        end
+    end
+end
+if settings.get("Data")[1].State and settings.get("Boot") ~= "" then
+    term.clear()
+    term.setCursorPos(1,1)
+    shell.run(settings.get("Boot"))
 end

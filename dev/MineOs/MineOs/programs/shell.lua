@@ -51,15 +51,13 @@ local function split (inputstr, sep)
 end
 local make_package = dofile("rom/modules/main/cc/require.lua").make
 local StartFile = "MineOs/shell_list.lua"
-local debug = false
 local multishell = nil
-local parentShell = nil
+local parentShell = shell or nil
 local parentTerm = term.current()
 local Blocked = {
     ["MineOs"]  = true,
     ["startup.lua"] = true,
 }
-
 
 
 local bExit = false
@@ -119,7 +117,18 @@ end
 -- This may occur recursively, up to the maximum number of times specified by remainingRecursion
 -- Returns the same type as os.run, which is a boolean indicating whether the program exited successfully.
 local function executeProgram(remainingRecursion, path, args)
-    local file, err = fs.open(path, "r")
+    local file, err
+    local AllowedRunPrograms = {
+        ["MineOs/programs/shell.lua"] = true,
+        ["MineOs/programs/dev.lua"] = true,
+        ["MineOs/shell_list.lua"] = true,
+    }
+    if AllowedRunPrograms[path] ~= nil then 
+        file, err = fs.open(path, "r","Update")
+    else 
+        file, err = fs.open(path, "r")
+    end
+    
     if not file then
         printError(err)
         return false
@@ -222,6 +231,7 @@ local function execute(command, ...)
     end
 
     local sPath = shell.resolveProgram(command)
+
     if sPath ~= nil then
         tProgramStack[#tProgramStack + 1] = sPath
 
@@ -255,14 +265,6 @@ end
 function shell.run(...)
     local tWords = tokenise(...)
     local sCommand = tWords[1]
-    local A = split(sCommand,"/") 
-    if A[1] == "rom" and os.isLockdown() then
-        error("No way man",2 )
-        return false
-    end
-    if A[1] == "hack" and os.isLockdown() then
-        sCommand = "rom"
-    end
     if sCommand then
         return execute(sCommand, table.unpack(tWords, 2))
     end
@@ -315,6 +317,10 @@ end
 function shell.path()
     return sPath
 end
+local WasAlreadyOn = false
+function shell.wasOn()
+    return not WasAlreadyOn
+end
 local function split (inputstr, sep)
     if sep == nil then
             sep = "%s"
@@ -366,6 +372,8 @@ function shell.Update()
         end
     end
     -- Main program
+    print("Do you wanna update if not shutdown computer if yes press key")
+    os.pullEvent("key")
     print("Downloading files ...")
     downloadFolderWithJson()
     term.setTextColor(colors.lime)
@@ -375,39 +383,43 @@ function shell.Update()
     os.reboot()
 end
 local Blocked = {
-    ["shell_list.lua"] = {R=true,W=false},
+    ["shell_list.lua"] = {R=false,W=false},
     ["lib.lua"] = {R=true,W=true},
     ["Boot.dat"] = {R=true,W=true},
+    ["programs/shell.lua"] = {R=false,W=false},
+    ["programs/dev.lua"] = {R=false,W=false},
 }
-local bannedPrograms = {
-    ["shell.lua"] = true,
-    ["dev.lua"] = true,
-}
-function shell.isReadeble(path)
-    path = shell.resolve(path)
+function shell.isReadeble(opath)
+    orgdir = shell.dir()
+    shell.setDir("/")
+    path = shell.resolve(opath)
+    shell.setDir(orgdir)
     local Pdir = split(path,"/")
+    local mDir = Pdir[1]
+    local sDir = table.concat(Pdir,"/",2,#Pdir)
     if Pdir[1] == "startup.lua" then return false  
-    elseif Pdir[1] == "MineOs" and Pdir[2] == "programs" then
-        if bannedPrograms[Pdir[3]] == nil then return true
-        else return false
-        end
-    elseif Pdir[1] == "MineOs" then
-        if Blocked[Pdir[2]] ~= nil then return Blocked[Pdir[2]].R
-        else return false
+
+    elseif mDir == "MineOs" then
+        if Blocked[sDir] ~= nil then 
+            return Blocked[sDir].R
+        else 
+            return true
         end
     else return true
     end
 end
+--elseif Pdir[1] == "MineOs" and Pdir[2] == "programs" then if bannedPrograms[Pdir[3]] == nil then return true else return false end
 function shell.isPathBlocked(path)
     path = shell.resolve(path)
     local Pdir = split(path,"/")
-    if Pdir[1] == "MineOs" and Pdir[2] == "programs" then
-        if bannedPrograms[Pdir[3]] ~= nil then return Blocked[Pdir[3]]
-        else return false
-        end
-    elseif Pdir[1] == "MineOs" then
-        if Blocked[Pdir[2]] ~= nil then return Blocked[Pdir[2]].W
-        else return false
+    local mDir = Pdir[1]
+    local sDir = table.concat(Pdir,"/",2,#Pdir)
+    if Pdir[1] == "startup.lua" then return false  
+    elseif mDir == "MineOs" then
+        if Blocked[sDir] ~= nil then 
+            return Blocked[sDir].W
+        else 
+            return true
         end
     else return true
     end
@@ -798,8 +810,8 @@ else
     -- Run the startup program
     if parentShell == nil then
         shell.run(StartFile)
+        WasAlreadyOn = true
     end
-
     -- Read commands and execute them
     local tCommandHistory = {}
     while not bExit do
@@ -856,11 +868,7 @@ else
             printError("Who even is using multishell")
         elseif B[1] == "rom" then
             printError("This Directory is disabled")
-        elseif fs.exists("/MineOs/programs/"..spli[1]..".lua") then
-            if debug then print("/MineOs/programs/"..spli[1]..".lua") end
-            shell.run("/MineOs/programs/"..spli[1]..".lua".." "..A)
         else
-            if debug then print(result) end
             if shell.isPathBlocked(result) then 
                 shell.run(result)
             else
